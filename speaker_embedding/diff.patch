@@ -1,0 +1,13 @@
+diff --git a/SpeakerNet.py b/SpeakerNet.py
+index c7fefad..fb515b9 100644
+--- a/SpeakerNet.py
++++ b/SpeakerNet.py
+@@ -38,7 +38,7 @@ class SpeakerNet(nn.Module):
+ 
+     def forward(self, data, label=None):
+ 
+-        data    = data.reshape(-1,data.size()[-1]).cuda() 
++        data    = data.reshape(-1,data.size()[-1])
+         outp    = self.__S__.forward(data)
+ 
+         if label == None:
