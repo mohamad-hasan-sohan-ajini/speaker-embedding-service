@@ -8,5 +8,7 @@ else
     eval "$@"
 fi
 
+/home/model-server/services/speaker_embedding/run.sh
+
 # prevent docker exit
 tail -f /dev/null
