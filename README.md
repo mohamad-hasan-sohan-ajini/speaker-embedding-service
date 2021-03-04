@@ -27,3 +27,10 @@ with open('resources/shah.wav', 'rb') as f:
 response = requests.put('http://127.0.0.1:8080/predictions/speaker_embedding', data=data)
 speaker_embedding = np.frombuffer(base64.b64decode(response.text), dtype=np.float32)
 ```
+
+You could send multiple requests concurrently:
+```python
+import grequests
+reqs = (grequests.put('http://127.0.0.1:8080/predictions/speaker_embedding', data=data) for _ in range(1000))
+reps = grequests.map(reqs)
+```
