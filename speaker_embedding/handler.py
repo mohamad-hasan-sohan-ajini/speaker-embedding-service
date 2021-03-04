@@ -24,7 +24,7 @@ class SpeakerEmbeddingHandler(BaseHandler):
     def initialize(self, context):
         self._context = context
         properties = context.system_properties
-        if properties.get("gpu_id"):
+        if properties.get("gpu_id") is not None:
             self.device = torch.device("cuda:" + str(properties.get("gpu_id")))
         else:
             self.device = torch.device('cpu')
@@ -65,8 +65,6 @@ class SpeakerEmbeddingHandler(BaseHandler):
     def inference_batch(self, batch):
         length = np.cumsum([0] + [len(i) for i in batch])
         batch = torch.cat(batch).to(self.device)
-        print(f'model:\n{self.model}')
-        print(f'tensor:\n{batch.dtype}')
         with torch.no_grad():
             out = self.model(batch)
             if self.model.__L__.test_normalize:
@@ -78,8 +76,6 @@ class SpeakerEmbeddingHandler(BaseHandler):
         return out
 
     def handle(self, batch, context):
-        print('batch' * 100)
         batch = [self.load_wav(io.BytesIO(i.get('body'))) for i in batch]
         result = self.inference_batch(batch)
-        print('infered' * 100)
         return [base64.b64encode(embedding.tobytes()) for embedding in result]
