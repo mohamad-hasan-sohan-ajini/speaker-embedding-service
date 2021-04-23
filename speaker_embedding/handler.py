@@ -67,12 +67,15 @@ class SpeakerEmbeddingHandler(BaseHandler):
         batch = torch.cat(batch).to(self.device)
         with torch.no_grad():
             out = self.model(batch)
+            out = [
+                out[start:end].mean(dim=0)
+                for start, end in zip(length[:-1], length[1:])
+            ]
             if self.model.__L__.test_normalize:
-                out = torch.nn.functional.normalize(out, p=2, dim=1)
-        out = [
-            out[start:end].mean(dim=0).cpu().numpy()
-            for start, end in zip(length[:-1], length[1:])
-        ]
+                out = [
+                    torch.nn.functional.normalize(i, p=2, dim=0).cpu().numpy()
+                    for i in out
+                ]
         return out
 
     def handle(self, batch, context):
