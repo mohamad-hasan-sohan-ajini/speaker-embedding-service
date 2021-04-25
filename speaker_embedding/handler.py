@@ -7,6 +7,7 @@ import sys
 import numpy as np
 import soundfile as sf
 import torch
+import torch.nn.functional as F
 from ts.torch_handler.base_handler import BaseHandler
 
 sys.path.append('/home/model-server/services/speaker_embedding/voxceleb_trainer')
@@ -67,15 +68,12 @@ class SpeakerEmbeddingHandler(BaseHandler):
         batch = torch.cat(batch).to(self.device)
         with torch.no_grad():
             out = self.model(batch)
-            out = [
-                out[start:end].mean(dim=0)
-                for start, end in zip(length[:-1], length[1:])
-            ]
             if self.model.__L__.test_normalize:
-                out = [
-                    torch.nn.functional.normalize(i, p=2, dim=0).cpu().numpy()
-                    for i in out
-                ]
+                out = F.normalize(out, p=2, dim=1)
+        out = [
+            F.normalize(out[start:end].mean(dim=0), dim=0).cpu().numpy()
+            for start, end in zip(length[:-1], length[1:])
+        ]
         return out
 
     def handle(self, batch, context):
