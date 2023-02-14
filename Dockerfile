@@ -4,8 +4,9 @@ USER root
 
 RUN apt-get update && apt-get upgrade -y
 
-RUN apt-get install python3-distutils python3-dev git nano curl python3-pip libsndfile1 build-essential -y && \
-    pip3 install -U pip
+RUN apt-get install python3-distutils python3-dev git nano curl python3-pip libsndfile1 build-essential ffmpeg -y && \
+    pip3 install -U pip && \
+    pip3 install ffmpeg-python
 
 USER model-server
 

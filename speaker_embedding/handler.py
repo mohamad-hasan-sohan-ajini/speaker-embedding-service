@@ -2,8 +2,10 @@ import base64
 import io
 import json
 import os
+import subprocess
 import sys
 
+import ffmpeg
 import numpy as np
 import soundfile as sf
 import torch
@@ -21,6 +23,7 @@ class SpeakerEmbeddingHandler(BaseHandler):
     def __init__(self):
         self._context = None
         self.initialized = False
+        self.sample_rate = 16000
 
     def initialize(self, context):
         self._context = context
@@ -38,8 +41,33 @@ class SpeakerEmbeddingHandler(BaseHandler):
         self.model.eval()
         self.initialized = True
 
+    def convert_audio_to_wav(self, audio_content):
+        args = (
+            ffmpeg
+            .input('pipe:')
+            .output(
+                'pipe:',
+                format='wav',
+                acodec='pcm_s16le',
+                ac=1,
+                ar=self.sample_rate
+            )
+            .get_args()
+        )
+        ffmpeg_process = subprocess.Popen(
+            ['ffmpeg'] + args,
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL
+        )
+        wav_content = ffmpeg_process.communicate(input=audio_content)[0]
+        wav_content = io.BytesIO(wav_content)
+        ffmpeg_process.kill()
+        return wav_content
+    
     def load_wav(self, filename, max_frames=400):
-        audio, _ = sf.read(filename)
+        wav_content = self.convert_audio_to_wav(filename)
+        audio, _ = sf.read(wav_content)
         segment_size = max_frames * 160 + 240
         print(f'segment_size: {segment_size}')
         audio_size = audio.shape[0]
@@ -77,6 +105,6 @@ class SpeakerEmbeddingHandler(BaseHandler):
         return out
 
     def handle(self, batch, context):
-        batch = [self.load_wav(io.BytesIO(i.get('body'))) for i in batch]
+        batch = [self.load_wav(i.get('body')) for i in batch]
         result = self.inference_batch(batch)
         return [base64.b64encode(embedding.tobytes()) for embedding in result]
